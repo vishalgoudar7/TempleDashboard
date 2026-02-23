@@ -1,0 +1,128 @@
+
+<!DOCTYPE html>
+<html lang="en">
+
+    <head>
+        
+        
+        <meta charset="utf-8" />
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=0, minimal-ui">
+        <title>Devalaya</title>
+        <meta content="Responsive admin theme build on top of Bootstrap 4" name="description" />
+        <meta content="Themesdesign" name="author" />
+        <link rel="shortcut icon" href="/static/admin-assets/images/favicon.ico' %}">
+
+        <link href="/static/admin-assets/css/bootstrap.min.css" rel="stylesheet" type="text/css">
+        <link href="/static/admin-assets/css/metismenu.min.css" rel="stylesheet" type="text/css">
+        <link href="/static/admin-assets/css/icons.css" rel="stylesheet" type="text/css">
+        <link href="/static/admin-assets/css/style.css" rel="stylesheet" type="text/css">
+        <link href="/static/admin-assets/css/custom.css" rel="stylesheet" type="text/css">
+
+    </head>
+
+    <body>
+
+        <!-- Begin page -->
+        <div class="accountbg"></div>
+
+        <div class="wrapper-page">
+        
+<style>
+    .input-container {
+  display: -ms-flexbox; /* IE10 */
+  display: flex;
+  width: 100%;
+  margin-bottom: 15px;
+}
+
+.icon {
+  padding: 10px;
+  background: rgb(48,65,155);
+  color: rgb(249, 249, 249);
+  min-width: 50px;
+  text-align: center;
+}
+
+.input-field {
+  width: 100%;
+  padding: 10px;
+  outline: none;
+}
+</style>
+<div class="wrapper-page">
+   <!-- <div class="card card-pages shadow-none" style="background-color: rgb(120, 96, 161);"> -->
+   <div class="card card-pages shadow-none" style="background-color: rgb(0, 0, 0);">
+                    <div class="card-body">
+                        
+
+
+                        <div class="text-center m-t-0 m-b-15">
+<!--                                <a href="index.html" class="logo logo-admin"><img src="/static/assets/images/logo-main-blank.png" alt="" height="40"></a>-->
+                        </div>
+                        <h5 class="font-18 text-center font-weight-bold text-muted" style="color:gray;">Sign in to continue to Devalaya Portal.</h5>
+
+                        <form class="form-horizontal m-t-30" method="post" action="/portal/login/">
+                              <input type="hidden" name="csrfmiddlewaretoken" value="fCm3ZBXWEmCfdCixQdjjEMJOLlbNLhYld4baZz6HO6qUOaM0ECO84DsK7BQ7PHVu">
+                            <!-- <div class="form-group">
+                                <div class="col-12">
+                                    <label class="font-weight-bold">Email Address</label>
+                                    <input class="form-control" name="username" type="text" required="" placeholder="Email Address">
+                                </div>
+                            </div> -->
+                            <label class="font-weight-bold" style="color: gray;">Email Address</label>
+                            <div class="input-container ">
+                                <i class="fa fa-envelope icon"></i>
+                                <input class="input-field" name="username" type="text" required="" placeholder="Email Address">
+                            </div>
+
+                            <!-- <div class="form-group">
+                                <div class="col-12">
+                                        <label >Password</label>
+                                    <input class="form-control" name="password" type="password" required="" placeholder="Password">
+                                </div>
+                            </div> -->
+                            <label  class="font-weight-bold" style="color: gray;">Password</label>
+                            <div class="input-container">
+                                <i class="fa fa-key icon"></i>
+                                <input class="input-field" name="password" type="password" required="" placeholder="Password">
+                            </div>                            
+
+                            <div class="form-group">
+                                <div class="col-12">
+                                    <div class="checkbox checkbox-primary">
+                                            <div class="custom-control custom-checkbox">
+                                            <input type="checkbox" checked class="custom-control-input" id="customCheck1">
+                                            <label class="custom-control-label" for="customCheck1" style="color: grey;"> Remember me</label>
+                                            </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="form-group text-center m-t-20">
+                                <div class="col-12">
+                                    <button class="btn btn-primary btn-block btn-lg waves-effect waves-light" type="submit">Log In</button>
+                                </div>
+                            </div>
+
+                            <div class="form-group row m-t-30 m-b-0">
+                                <div class="col-sm-7 ml-3">
+                                    <a href="/password_reset/"><i class="fa fa-lock m-r-5"></i> Forgot your password?</a>
+                                </div>
+
+                            </div>
+                        </form>
+                    </div>
+
+                </div>
+  </div>
+
+        </div>
+        <!-- END wrapper -->
+
+        <script src="/static/admin-assets/js/jquery.min.js"></script>
+        
+        
+    </body>
+
+</html>
