@@ -1,79 +1,16 @@
-// import React from "react";
-// import { Routes, Route, Navigate } from "react-router-dom";
-// import PujariLogin from "./components/PujariLogin";
-// import PujariDashboard from "./components/PujariDashboard";
-
-// // ✅ Private route wrapper (checks token before opening dashboard)
-// const PrivateRoute = ({ children }) => {
-//   const token = localStorage.getItem("pujariToken");
-//   return token ? children : <Navigate to="/" />;
-// };
-
-// const AllRouters = () => {
-//   return (
-//     <Routes>
-//       {/* Default login page */}
-//       <Route path="/" element={<PujariLogin />} />
-
-//       {/* Dashboard (Protected Route) */}
-//       <Route
-//         path="/pujari-dashboard"
-//         element={
-//           <PrivateRoute>
-//             <PujariDashboard />
-//           </PrivateRoute>
-//         }
-//       />
-//     </Routes>
-//   );
-// };
-
-// export default AllRouters;
-
-
-
-
-
-
-
-// import React from 'react';
-// import { Routes, Route } from 'react-router-dom';
-// import PujariLogin from './components/PujariLogin';
-// import PujariDashboard from './components/PujariDashboard';
-
-// const AllRouters = () => {
-//   return (
-//     <Routes>
-//       <Route path="/" element={<PujariLogin />} />
-//       <Route path="/pujari-dashboard" element={<PujariDashboard />} />
-//     </Routes>
-//   );
-// };
-
-// export default AllRouters;
-
-
-
-
-
-
-
-
-
-
-
-
-import { BrowserRouter, Routes, Route } from "react-router-dom";
-import PujariLogin from "./components/PujariLogin";
-import PujariDashboard from "./components/PujariDashboard";
+import { BrowserRouter, Route, Routes } from "react-router-dom";
+import PoojaRequests from "./components/PoojaRequests";
+import TempleOfficerDashboard from "./components/TempleOfficerDashboard";
+import TempleOfficerLogin from "./components/TempleOfficerLogin";
 
 const AllRouters = () => {
   return (
     <BrowserRouter>
       <Routes>
-        <Route path="/" element={<PujariLogin />} />
-        <Route path="/pujari/login" element={<PujariLogin />} />
-        <Route path="/pujari/dashboard" element={<PujariDashboard />} />
+        <Route path="/" element={<TempleOfficerLogin />} />
+        <Route path="/temple-officer/login" element={<TempleOfficerLogin />} />
+        <Route path="/temple-officer/dashboard" element={<TempleOfficerDashboard />} />
+        <Route path="/temple-officer/requests" element={<PoojaRequests />} />
       </Routes>
     </BrowserRouter>
   );

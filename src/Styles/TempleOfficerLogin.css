@@ -58,7 +58,7 @@
 
 
 /* 
-.pujari-login-container {
+.temple-officer-login-container {
   display: flex;
   justify-content: center;
   align-items: center;
@@ -67,7 +67,7 @@
   font-family: "Poppins", sans-serif;
 }
 
-.pujari-login-card {
+.temple-officer-login-card {
   background: #fff;
   border-radius: 15px;
   padding: 40px 35px;
@@ -76,13 +76,13 @@
   width: 350px;
 }
 
-.pujari-login-card h2 {
+.temple-officer-login-card h2 {
   margin-bottom: 20px;
   color: #333;
   font-weight: 600;
 }
 
-.pujari-login-card input {
+.temple-officer-login-card input {
   width: 100%;
   padding: 12px;
   margin: 10px 0;
@@ -91,7 +91,7 @@
   font-size: 16px;
 }
 
-.pujari-login-card button {
+.temple-officer-login-card button {
   width: 100%;
   padding: 12px;
   margin-top: 10px;
@@ -104,7 +104,7 @@
   transition: background 0.3s;
 }
 
-.pujari-login-card button:hover {
+.temple-officer-login-card button:hover {
   background-color: #e65c00;
 }
 
@@ -147,28 +147,22 @@
   font-size: 22px;
   font-weight: 600;
   color: #222;
-  margin-bottom: 15px;
-}
-
-.phone-input-group {
-  display: flex;
-  align-items: center;
-  border: 1px solid #ccc;
-  border-radius: 8px;
-  padding: 6px 10px;
-  margin-bottom: 12px;
-}
-
-.country-code {
-  font-weight: 600;
-  margin-right: 6px;
+  margin-bottom: 18px;
 }
 
 .input-field {
-  flex: 1;
-  border: none;
-  outline: none;
+  width: 100%;
   font-size: 16px;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  padding: 10px 12px;
+  outline: none;
+  margin-bottom: 12px;
+}
+
+.text-input:focus {
+  border-color: #ff6600;
+  box-shadow: 0 0 0 1px #ff6600;
 }
 
 .btn-primary, .btn-secondary {
@@ -197,12 +191,21 @@
   cursor: not-allowed;
 }
 
-.otp-input {
-  width: 100%;
-  border: 1px solid #ccc;
-  border-radius: 8px;
-  padding: 10px;
-  margin-bottom: 10px;
+.remember-me {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 4px 0 8px;
+  font-size: 14px;
+  color: #444;
+  cursor: pointer;
+}
+
+.remember-me input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  accent-color: #ff6600;
+  cursor: pointer;
 }
 
 .error-text {
@@ -210,3 +213,4 @@
   margin-top: 10px;
   font-size: 14px;
 }
+
