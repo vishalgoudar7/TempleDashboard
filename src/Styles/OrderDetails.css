@@ -1,0 +1,64 @@
+.order-details-card {
+  margin-top: 18px;
+  background: #ffffff;
+  border: 1px solid #e7edf5;
+  border-radius: 14px;
+  padding: 18px;
+  box-shadow: 0 8px 24px rgba(38, 56, 90, 0.06);
+}
+
+.order-details-actions {
+  display: flex;
+  justify-content: flex-start;
+  margin-bottom: 14px;
+}
+
+.order-details-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.order-details-item {
+  background: #f8fbff;
+  border: 1px solid #e4ecf8;
+  border-radius: 10px;
+  padding: 12px;
+}
+
+.order-details-label {
+  display: block;
+  color: #5f7392;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  margin-bottom: 6px;
+}
+
+.order-details-value {
+  display: block;
+  color: #1f2f48;
+  font-size: 14px;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.order-details-error {
+  margin: 0;
+  color: #c0392b;
+  font-size: 14px;
+}
+
+@media (max-width: 900px) {
+  .order-details-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 760px) {
+  .order-details-card {
+    margin-top: 12px;
+    border-radius: 12px;
+    padding: 12px;
+  }
+}

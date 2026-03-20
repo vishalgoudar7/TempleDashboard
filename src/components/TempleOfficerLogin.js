@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { getApiErrorMessage } from "../api/errors";
 import { loginTempleOfficer } from "../api/templeOfficerApi";
+import loginCscLogo from "../asset/logi csc.png";
 import "../Styles/TempleOfficerLogin.css";
 
 const SAVED_LOGIN_KEY = "templeOfficerSavedLogin";
@@ -10,8 +11,32 @@ const REMEMBER_ME_KEY = "templeOfficerRememberMe";
 const getTempleName = (payload) =>
   payload?.temple_associated ||
   payload?.templeAssociated ||
+  payload?.temple_name ||
+  payload?.temple?.name ||
   payload?.["temple associated"] ||
   "";
+
+const getTempleId = (payload) => {
+  const candidateValues = [
+    payload?.temple_id,
+    payload?.templeId,
+    payload?.associated_temple_id,
+    payload?.associatedTempleId,
+    payload?.temple?.temple_id,
+    payload?.temple?.id,
+    payload?.associated_temple?.temple_id,
+    payload?.associated_temple?.id,
+    payload?.["temple id"],
+  ];
+
+  for (const candidate of candidateValues) {
+    if (candidate !== null && candidate !== undefined && String(candidate).trim() !== "") {
+      return String(candidate).trim();
+    }
+  }
+
+  return "";
+};
 
 const TempleOfficerLogin = () => {
   const [email, setEmail] = useState("");
@@ -85,6 +110,7 @@ const TempleOfficerLogin = () => {
           email: payload?.email || email.trim(),
           templeName: getTempleName(payload),
           templeAssociated: getTempleName(payload),
+          templeId: getTempleId(payload),
         })
       );
 
@@ -122,13 +148,14 @@ const TempleOfficerLogin = () => {
   return (
     <div className="login-container">
       <div className="login-box">
+        <img src={loginCscLogo} alt="CSC Logo" className="login-logo" />
         <h2 className="login-title">Temple Officer Login</h2>
 
-        <form onSubmit={handleLogin}>
+        <form onSubmit={handleLogin} className="login-form">
           <input
             type="email"
             className="input-field text-input"
-            placeholder="Email"
+            placeholder="Email Address"
             value={email}
             onChange={(event) => setEmail(event.target.value)}
             autoComplete="email"
@@ -166,4 +193,3 @@ const TempleOfficerLogin = () => {
 };
 
 export default TempleOfficerLogin;
-

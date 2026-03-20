@@ -1,201 +1,62 @@
-/* .login-container {
-  max-width: 400px;
-  margin: 100px auto;
-  background: #fff;
-  padding: 35px;
-  border-radius: 15px;
-  box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-  text-align: center;
-  font-family: "Poppins", sans-serif;
-}
-
-.login-container h2 {
-  color: #2c3e50;
-  margin-bottom: 25px;
-  font-weight: 600;
-}
-
-.login-container input {
-  width: 100%;
-  padding: 12px;
-  margin: 10px 0;
-  border-radius: 8px;
-  border: 1px solid #ccc;
-  font-size: 16px;
-}
-
-.login-container button {
-  width: 100%;
-  padding: 12px;
-  background-color: #ff6600;
-  color: white;
-  font-size: 16px;
-  border: none;
-  border-radius: 8px;
-  cursor: pointer;
-  transition: 0.3s;
-}
-
-.login-container button:hover {
-  background-color: #e65c00;
-}
-
-.error {
-  color: red;
-  margin-top: 10px;
-  font-size: 14px;
-} */
-
-
-
-
-
-
-
-
-
-
-
-
-/* 
-.temple-officer-login-container {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  height: 100vh;
-  background: linear-gradient(135deg, #ff6600, #ff9966);
-  font-family: "Poppins", sans-serif;
-}
-
-.temple-officer-login-card {
-  background: #fff;
-  border-radius: 15px;
-  padding: 40px 35px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
-  text-align: center;
-  width: 350px;
-}
-
-.temple-officer-login-card h2 {
-  margin-bottom: 20px;
-  color: #333;
-  font-weight: 600;
-}
-
-.temple-officer-login-card input {
-  width: 100%;
-  padding: 12px;
-  margin: 10px 0;
-  border-radius: 8px;
-  border: 1px solid #ccc;
-  font-size: 16px;
-}
-
-.temple-officer-login-card button {
-  width: 100%;
-  padding: 12px;
-  margin-top: 10px;
-  background-color: #ff6600;
-  color: white;
-  border: none;
-  border-radius: 8px;
-  font-size: 16px;
-  cursor: pointer;
-  transition: background 0.3s;
-}
-
-.temple-officer-login-card button:hover {
-  background-color: #e65c00;
-}
-
-.error-text {
-  color: red;
-  margin-top: 10px;
-  font-size: 14px;
-} */
-
-
-
-
-
-
-
-
-
-
-
-
-
 .login-container {
   display: flex;
   justify-content: center;
   align-items: center;
-  min-height: 90vh;
-  background-color: #f9f9f9;
+  min-height: 100vh;
+  background-color: #f4f6f8;
+  padding: 20px;
+  font-family: "Poppins", sans-serif;
 }
 
 .login-box {
-  background: #fff;
-  padding: 30px 25px;
+  background: #ffffff;
+  width: 100%;
+  max-width: 380px;
+  padding: 28px 24px;
   border-radius: 12px;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-  width: 350px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
   text-align: center;
 }
 
+.login-logo {
+  display: block;
+  width: 140px;
+  max-width: 100%;
+  height: auto;
+  margin: 0 auto 12px;
+}
+
 .login-title {
-  font-size: 22px;
+  margin: 0 0 18px;
+  font-size: 24px;
   font-weight: 600;
-  color: #222;
-  margin-bottom: 18px;
+  color: #2c3e50;
+}
+
+.login-form {
+  display: grid;
+  gap: 12px;
 }
 
 .input-field {
   width: 100%;
-  font-size: 16px;
-  border: 1px solid #ccc;
+  font-size: 15px;
+  border: 1px solid #ccd3db;
   border-radius: 8px;
-  padding: 10px 12px;
+  padding: 11px 12px;
   outline: none;
-  margin-bottom: 12px;
 }
 
 .text-input:focus {
   border-color: #ff6600;
-  box-shadow: 0 0 0 1px #ff6600;
-}
-
-.btn-primary, .btn-secondary {
-  width: 100%;
-  border: none;
-  padding: 10px;
-  font-size: 16px;
-  border-radius: 8px;
-  margin-top: 10px;
-  cursor: pointer;
-}
-
-.btn-primary {
-  background-color: #ff6600;
-  color: #fff;
-}
-
-.btn-secondary {
-  background-color: #eee;
-  color: #333;
-}
-
-.btn-primary:disabled,
-.btn-secondary:disabled {
-  opacity: 0.65;
-  cursor: not-allowed;
+  box-shadow: 0 0 0 2px rgba(255, 102, 0, 0.15);
 }
 
 .remember-me {
-  display: flex;
+  display: inline-flex;
   align-items: center;
   gap: 8px;
-  margin: 4px 0 8px;
+  margin: 4px 0 2px;
   font-size: 14px;
   color: #444;
   cursor: pointer;
@@ -208,9 +69,30 @@
   cursor: pointer;
 }
 
+.btn-primary {
+  width: 100%;
+  border: none;
+  padding: 11px 12px;
+  font-size: 16px;
+  font-weight: 600;
+  border-radius: 8px;
+  cursor: pointer;
+  background-color: #ff6600;
+  color: #ffffff;
+}
+
+.btn-primary:hover:not(:disabled) {
+  background-color: #e65c00;
+}
+
+.btn-primary:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+
 .error-text {
   color: #c0392b;
   margin-top: 10px;
   font-size: 14px;
+  text-align: left;
 }
-
