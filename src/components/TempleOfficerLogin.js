@@ -2,6 +2,10 @@ import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { getApiErrorMessage } from "../api/errors";
 import { loginTempleOfficer } from "../api/templeOfficerApi";
+import {
+  getTempleOfficerLoginRedirectRoute,
+  setTempleOfficerLastRoute,
+} from "../utils/templeOfficerSession";
 import loginCscLogo from "../asset/logi csc.png";
 import "../Styles/TempleOfficerLogin.css";
 
@@ -41,6 +45,7 @@ const getTempleId = (payload) => {
 const TempleOfficerLogin = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
@@ -67,7 +72,7 @@ const TempleOfficerLogin = () => {
   useEffect(() => {
     const token = localStorage.getItem("templeOfficerToken");
     if (token) {
-      navigate("/temple-officer/dashboard");
+      navigate(getTempleOfficerLoginRedirectRoute());
     }
   }, [navigate]);
 
@@ -132,7 +137,10 @@ const TempleOfficerLogin = () => {
         localStorage.removeItem(REMEMBER_ME_KEY);
       }
 
-      navigate("/temple-officer/dashboard", {
+      const redirectRoute = getTempleOfficerLoginRedirectRoute();
+      setTempleOfficerLastRoute(redirectRoute);
+
+      navigate(redirectRoute, {
         state: {
           loginMessage: payload?.message || "Login successful",
         },
@@ -146,47 +154,94 @@ const TempleOfficerLogin = () => {
   };
 
   return (
-    <div className="login-container">
-      <div className="login-box">
-        <img src={loginCscLogo} alt="CSC Logo" className="login-logo" />
-        <h2 className="login-title">Temple Officer Login</h2>
+    <div className="login-page">
+      <div className="login-box card border-0">
+        <div className="card-body">
+          <div className="login-logo-row">
+           
+            <img src={loginCscLogo} alt="CSC Logo" className="login-logo login-logo-secondary" />
+          </div>
+          <h2 className="login-title">Temple Officer Login</h2>
+          <p className="login-subtext">Access temple dashboard and manage services</p>
 
-        <form onSubmit={handleLogin} className="login-form">
-          <input
-            type="email"
-            className="input-field text-input"
-            placeholder="Email Address"
-            value={email}
-            onChange={(event) => setEmail(event.target.value)}
-            autoComplete="email"
-            required
-          />
+          <form onSubmit={handleLogin} className="login-form" noValidate>
+            <div className="field-group">
+              <label htmlFor="officerEmail" className="field-label">
+                Email
+              </label>
+              <div className="input-icon-wrap">
+                <span className="input-icon" aria-hidden="true">
+                  <i className="bi bi-envelope-fill"></i>
+                </span>
+                <input
+                  id="officerEmail"
+                  type="email"
+                  className="form-control input-field"
+                  placeholder="Enter your email"
+                  value={email}
+                  onChange={(event) => setEmail(event.target.value)}
+                  autoComplete="email"
+                  required
+                />
+              </div>
+            </div>
 
-          <input
-            type="password"
-            className="input-field text-input"
-            placeholder="Password"
-            value={password}
-            onChange={(event) => setPassword(event.target.value)}
-            autoComplete="current-password"
-            required
-          />
+            <div className="field-group">
+              <label htmlFor="officerPassword" className="field-label">
+                Password
+              </label>
+              <div className="input-icon-wrap">
+                <span className="input-icon" aria-hidden="true">
+                  <i className="bi bi-lock-fill"></i>
+                </span>
+                <input
+                  id="officerPassword"
+                  type={showPassword ? "text" : "password"}
+                  className="form-control input-field"
+                  placeholder="Enter your password"
+                  value={password}
+                  onChange={(event) => setPassword(event.target.value)}
+                  autoComplete="current-password"
+                  required
+                />
+                <button
+                  type="button"
+                  className="toggle-password"
+                  onClick={() => setShowPassword((prev) => !prev)}
+                  aria-label={showPassword ? "Hide password" : "Show password"}
+                  aria-pressed={showPassword}
+                >
+                  <i className={`bi ${showPassword ? "bi-eye-slash-fill" : "bi-eye-fill"}`}></i>
+                </button>
+              </div>
+            </div>
 
-          <label className="remember-me">
-            <input
-              type="checkbox"
-              checked={rememberMe}
-              onChange={(event) => setRememberMe(event.target.checked)}
-            />
-            <span>Remember me</span>
-          </label>
+            <div className="login-actions">
+              <div className="form-check remember-me">
+                <input
+                  className="form-check-input"
+                  type="checkbox"
+                  id="rememberMe"
+                  checked={rememberMe}
+                  onChange={(event) => setRememberMe(event.target.checked)}
+                />
+                <label className="form-check-label" htmlFor="rememberMe">
+                  Remember me
+                </label>
+              </div>
+            </div>
 
-          <button type="submit" className="btn-primary" disabled={isLoading}>
-            {isLoading ? "Logging in..." : "Login"}
-          </button>
-        </form>
+            <button type="submit" className="login-btn" disabled={isLoading}>
+              {isLoading ? "Logging in..." : "Login"}
+            </button>
+          </form>
 
-        {errorMessage && <p className="error-text">{errorMessage}</p>}
+          {errorMessage && (
+            <p className="error-text" role="alert">
+              {errorMessage}
+            </p>
+          )}
+        </div>
       </div>
     </div>
   );

@@ -1,98 +1,272 @@
-.login-container {
+.login-page {
+  position: relative;
   display: flex;
   justify-content: center;
   align-items: center;
-  min-height: 100vh;
-  background-color: #f4f6f8;
-  padding: 20px;
+  min-height: 100dvh;
+  width: 100%;
+  padding: clamp(16px, 3vw, 28px);
+  background-color: #f6f7f9;
+  background-image: url("../asset/web slide 1920x1080.png");
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: cover;
   font-family: "Poppins", sans-serif;
 }
 
+.login-page::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, rgba(18, 12, 5, 0.56), rgba(18, 23, 35, 0.32));
+}
+
 .login-box {
-  background: #ffffff;
-  width: 100%;
-  max-width: 380px;
-  padding: 28px 24px;
-  border-radius: 12px;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
-  text-align: center;
+  position: relative;
+  z-index: 1;
+  width: min(430px, 95vw);
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.96);
+  box-shadow: 0 18px 42px rgba(15, 22, 36, 0.28);
+}
+
+.login-box .card-body {
+  padding: clamp(20px, 3.5vw, 30px);
+}
+
+.login-logo-row {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 12px;
+  width: min(220px, 100%);
+  margin-left: auto;
+  margin-right: auto;
+  margin-bottom: 14px;
 }
 
 .login-logo {
   display: block;
-  width: 140px;
   max-width: 100%;
   height: auto;
-  margin: 0 auto 12px;
+}
+
+.login-logo-primary {
+  width: 128px;
+}
+
+.login-logo-secondary {
+  width: 100%;
+  max-width: 100%;
+  max-height: 72px;
+  object-fit: contain;
 }
 
 .login-title {
-  margin: 0 0 18px;
-  font-size: 24px;
-  font-weight: 600;
-  color: #2c3e50;
+  margin: 0;
+  text-align: center;
+  font-size: clamp(1.45rem, 2.8vw, 1.9rem);
+  font-weight: 700;
+  color: #1f2a37;
+  line-height: 1.2;
+}
+
+.login-subtext {
+  margin: 8px 0 22px;
+  text-align: center;
+  font-size: 0.95rem;
+  color: #5a6574;
 }
 
 .login-form {
   display: grid;
-  gap: 12px;
+  gap: 14px;
+}
+
+.field-group {
+  display: grid;
+  gap: 8px;
+}
+
+.field-label {
+  margin: 0;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #2f3b4a;
+}
+
+.input-icon-wrap {
+  position: relative;
+}
+
+.input-icon {
+  position: absolute;
+  top: 50%;
+  left: 14px;
+  transform: translateY(-50%);
+  color: #8a95a3;
+  font-size: 0.95rem;
+  pointer-events: none;
 }
 
 .input-field {
-  width: 100%;
-  font-size: 15px;
-  border: 1px solid #ccd3db;
-  border-radius: 8px;
-  padding: 11px 12px;
-  outline: none;
+  min-height: 48px;
+  border: 1px solid #d1d8e0;
+  border-radius: 12px;
+  padding: 12px 44px 12px 40px;
+  font-size: 0.96rem;
+  color: #1f2a37;
 }
 
-.text-input:focus {
-  border-color: #ff6600;
-  box-shadow: 0 0 0 2px rgba(255, 102, 0, 0.15);
+.input-field::placeholder {
+  color: #8a95a3;
+}
+
+.input-field:focus {
+  border-color: #f28b2d;
+  box-shadow: 0 0 0 0.2rem rgba(242, 139, 45, 0.2);
+}
+
+.toggle-password {
+  position: absolute;
+  top: 50%;
+  right: 10px;
+  transform: translateY(-50%);
+  width: 34px;
+  height: 34px;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: #6b7480;
+  display: inline-flex;
+  justify-content: center;
+  align-items: center;
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+.toggle-password:hover {
+  color: #d76a00;
+  background-color: rgba(215, 106, 0, 0.1);
+}
+
+.toggle-password:focus-visible {
+  outline: 2px solid rgba(242, 139, 45, 0.55);
+  outline-offset: 1px;
+}
+
+.login-actions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  margin: 2px 0 4px;
 }
 
 .remember-me {
-  display: inline-flex;
+  display: flex;
   align-items: center;
   gap: 8px;
-  margin: 4px 0 2px;
-  font-size: 14px;
-  color: #444;
+  margin: 0;
+  color: #46515f;
+  font-size: 0.92rem;
+}
+
+.remember-me .form-check-input {
+  margin: 0;
+  cursor: pointer;
+  border-color: #bcc6d2;
+}
+
+.remember-me .form-check-input:checked {
+  background-color: #f58220;
+  border-color: #f58220;
+}
+
+.remember-me .form-check-input:focus {
+  border-color: #f2a358;
+  box-shadow: 0 0 0 0.2rem rgba(242, 139, 45, 0.2);
+}
+
+.remember-me .form-check-label {
   cursor: pointer;
 }
 
-.remember-me input[type="checkbox"] {
-  width: 16px;
-  height: 16px;
-  accent-color: #ff6600;
-  cursor: pointer;
-}
-
-.btn-primary {
-  width: 100%;
-  border: none;
-  padding: 11px 12px;
-  font-size: 16px;
+.forgot-password-link {
+  color: #cf6807;
+  font-size: 0.89rem;
   font-weight: 600;
-  border-radius: 8px;
-  cursor: pointer;
-  background-color: #ff6600;
+  text-decoration: none;
+}
+
+.forgot-password-link:hover {
+  color: #b85b00;
+  text-decoration: underline;
+}
+
+.forgot-password-link:focus-visible {
+  border-radius: 4px;
+  outline: 2px solid rgba(242, 139, 45, 0.5);
+  outline-offset: 3px;
+}
+
+.login-btn {
+  width: 100%;
+  min-height: 48px;
+  border: 0;
+  border-radius: 12px;
+  background: linear-gradient(180deg, #ff9a34 0%, #f57400 100%);
   color: #ffffff;
+  font-size: 1rem;
+  font-weight: 700;
+  letter-spacing: 0.2px;
+  box-shadow: 0 9px 18px rgba(245, 116, 0, 0.3);
+  transition: transform 0.12s ease, filter 0.2s ease, box-shadow 0.2s ease;
 }
 
-.btn-primary:hover:not(:disabled) {
-  background-color: #e65c00;
+.login-btn:hover:not(:disabled) {
+  filter: brightness(0.95);
 }
 
-.btn-primary:disabled {
-  opacity: 0.65;
+.login-btn:active:not(:disabled) {
+  transform: scale(0.99);
+}
+
+.login-btn:focus-visible {
+  outline: 0;
+  box-shadow: 0 0 0 0.25rem rgba(242, 139, 45, 0.3), 0 9px 18px rgba(245, 116, 0, 0.3);
+}
+
+.login-btn:disabled {
+  opacity: 0.75;
   cursor: not-allowed;
+  box-shadow: none;
 }
 
 .error-text {
-  color: #c0392b;
-  margin-top: 10px;
-  font-size: 14px;
+  margin: 14px 0 0;
+  color: #b73126;
+  font-size: 0.88rem;
   text-align: left;
+}
+
+@media (max-width: 576px) {
+  .login-page {
+    padding: 14px;
+  }
+
+  .login-box {
+    width: 95vw;
+  }
+
+  .login-actions {
+    flex-wrap: wrap;
+  }
+
+  .login-logo-primary {
+    width: 112px;
+  }
+
+  .login-logo-secondary {
+    max-height: 62px;
+  }
 }

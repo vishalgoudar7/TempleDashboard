@@ -1,9 +1,20 @@
-import React, { useEffect, useState } from "react";
+import React, { useMemo, useEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { API_BASE_URL } from "../api/config";
 import { getApiErrorMessage } from "../api/errors";
-import { fetchPoojaRequestList, fetchTempleById, fetchTempleOfficerDashboard } from "../api/templeOfficerApi";
-import { getInitials, getStoredTempleOfficerUser } from "../utils/templeOfficerSession";
+import {
+  fetchAllPoojaRequestRows,
+  fetchTempleById,
+  fetchTempleOfficerDashboard,
+} from "../api/templeOfficerApi";
+import {
+  getInitials,
+  getStoredTempleOfficerUser,
+  setTempleOfficerLastRoute,
+} from "../utils/templeOfficerSession";
+import DashboardCharts from "./DashboardCharts";
+import templeNameLogo from "../asset/logi csc.png";
+import sidebarBrandLogo from "../asset/NewLogo.png";
 import "../Styles/TempleOfficerDashboard.css";
 
 const ThreeDotsIcon = ({ className = "" }) => (
@@ -236,16 +247,6 @@ const pickField = (row, keys) => {
   return "";
 };
 
-const extractPoojaRows = (rawData) => {
-  if (Array.isArray(rawData)) return rawData;
-  if (Array.isArray(rawData?.data)) return rawData.data;
-  if (Array.isArray(rawData?.results)) return rawData.results;
-  if (Array.isArray(rawData?.orders)) return rawData.orders;
-  if (Array.isArray(rawData?.data?.data)) return rawData.data.data;
-  if (Array.isArray(rawData?.data?.results)) return rawData.data.results;
-  return [];
-};
-
 const extractTempleIdFromPoojaRow = (row) => {
   if (Array.isArray(row)) {
     const cleaned = row.map((cell) => stripHtml(cell));
@@ -287,6 +288,7 @@ const extractTempleIdFromPoojaRows = (rows) => {
 };
 
 const normalizeStatus = (value) => stripHtml(value).toLowerCase();
+const toCanonicalStatus = (value) => normalizeStatus(value);
 const parseFlexibleDate = (value) => {
   const text = stripHtml(value);
   if (!text) return null;
@@ -316,21 +318,24 @@ const DASHBOARD_STATUS_CARDS = [
     key: "todayReceived",
     label: "Today Received Orders",
     className: "card-today-received",
+    iconClass: "bi-calendar-check",
     filterStatus: "",
     recentDays: 3,
     helperText: "Open last 3 days order list",
   },
   {
-    key: "accepted",
-    label: "Accepted Requests",
-    className: "card-accepted",
-    filterStatus: "accepted",
-    helperText: "Open accepted status list",
+    key: "pending",
+    label: "Pending Orders",
+    className: "card-pending",
+    iconClass: "bi-hourglass-split",
+    filterStatus: "pending",
+    helperText: "Open pending status list",
   },
   {
     key: "processing",
     label: "Processing Requests",
     className: "card-processing",
+    iconClass: "bi-arrow-repeat",
     filterStatus: "processing",
     helperText: "Open processing status list",
   },
@@ -338,6 +343,7 @@ const DASHBOARD_STATUS_CARDS = [
     key: "total",
     label: "Total Pooja Requests",
     className: "card-total",
+    iconClass: "bi-list-check",
     filterStatus: "",
     helperText: "View all request entries",
   },
@@ -345,6 +351,7 @@ const DASHBOARD_STATUS_CARDS = [
     key: "dispatched",
     label: "Dispatched Requests",
     className: "card-dispatched",
+    iconClass: "bi-truck",
     filterStatus: "dispatched",
     helperText: "Open dispatched status list",
   },
@@ -352,6 +359,7 @@ const DASHBOARD_STATUS_CARDS = [
     key: "completed",
     label: "Completed Requests",
     className: "card-completed",
+    iconClass: "bi-check-circle",
     filterStatus: "completed",
     helperText: "Open completed status list",
   },
@@ -361,10 +369,10 @@ const extractRowStatus = (row) => {
   if (Array.isArray(row)) {
     const cleaned = row.map((cell) => stripHtml(cell));
     const offset = cleaned.length >= 14 ? 1 : 0;
-    return normalizeStatus(cleaned[offset + 7] || "");
+    return toCanonicalStatus(cleaned[offset + 7] || "");
   }
 
-  return normalizeStatus(pickField(row, ["status", "request_status", "state"]));
+  return toCanonicalStatus(pickField(row, ["status", "request_status", "state"]));
 };
 
 const extractRowCreatedDate = (row) => {
@@ -384,6 +392,7 @@ const getPoojaCounts = (rows) => {
   const counts = {
     total: rows.length,
     accepted: 0,
+    pending: 0,
     processing: 0,
     dispatched: 0,
     completed: 0,
@@ -406,46 +415,88 @@ const getPoojaCounts = (rows) => {
 };
 
 const formatCount = (value) => Number(value || 0).toLocaleString("en-IN");
+const EMPTY_POOJA_COUNTS = {
+  total: 0,
+  accepted: 0,
+  pending: 0,
+  processing: 0,
+  dispatched: 0,
+  completed: 0,
+  todayReceived: 0,
+};
 
-const fetchAllPoojaRequests = async (search = "") => {
-  const allRows = [];
-  let page = 1;
-  const maxPages = 50;
+const toCountValue = (value) => {
+  if (value === null || value === undefined) return null;
+  const normalized = String(value).replace(/,/g, "").trim();
+  if (!normalized) return null;
 
-  while (page <= maxPages) {
-    const response = await fetchPoojaRequestList({ page, search });
-    const payload = response?.data;
-    const pageRows = extractPoojaRows(payload);
+  const numericValue = Number(normalized);
+  if (!Number.isFinite(numericValue) || numericValue < 0) return null;
+  return Math.floor(numericValue);
+};
 
-    if (!pageRows.length) {
-      break;
+const pickCountFromSource = (source, keys) => {
+  if (!source || typeof source !== "object") return null;
+
+  for (const key of keys) {
+    const countValue = toCountValue(source[key]);
+    if (countValue !== null) {
+      return countValue;
     }
-
-    allRows.push(...pageRows);
-
-    const container =
-      payload?.data && typeof payload.data === "object" && !Array.isArray(payload.data)
-        ? payload.data
-        : payload;
-
-    const totalPages = Number(container?.total_pages || container?.pages || container?.totalPages || 0);
-    const currentPage = Number(container?.current_page || container?.page || page);
-    const hasNext = Boolean(container?.next);
-
-    if (hasNext) {
-      page += 1;
-      continue;
-    }
-
-    if (totalPages && currentPage < totalPages) {
-      page = currentPage + 1;
-      continue;
-    }
-
-    break;
   }
 
-  return allRows;
+  return null;
+};
+
+const getCountsFromDashboardPayload = (payload) => {
+  const sources = [
+    payload,
+    payload?.data,
+    payload?.result,
+    payload?.stats,
+    payload?.counts,
+    payload?.summary,
+    payload?.dashboard,
+  ];
+
+  const countMap = {
+    total: ["total", "total_count", "total_requests", "total_pooja_requests", "pooja_requests_total"],
+    accepted: ["accepted", "accepted_count", "accepted_requests"],
+    pending: ["pending", "pending_count", "pending_requests"],
+    processing: ["processing", "processing_count", "processing_requests", "in_progress"],
+    dispatched: ["dispatched", "dispatched_count", "dispatched_requests"],
+    completed: ["completed", "completed_count", "completed_requests", "success_count"],
+    todayReceived: [
+      "today_received",
+      "todayReceived",
+      "today_count",
+      "today_requests",
+      "today_received_orders",
+    ],
+  };
+
+  const extractedCounts = {};
+  let hasAnyCount = false;
+
+  for (const [countKey, candidateKeys] of Object.entries(countMap)) {
+    for (const source of sources) {
+      const countValue = pickCountFromSource(source, candidateKeys);
+      if (countValue !== null) {
+        extractedCounts[countKey] = countValue;
+        hasAnyCount = true;
+        break;
+      }
+    }
+  }
+
+  if (!hasAnyCount) {
+    return null;
+  }
+
+  return {
+    ...EMPTY_POOJA_COUNTS,
+    ...extractedCounts,
+  };
 };
 
 const TempleOfficerDashboard = () => {
@@ -453,14 +504,9 @@ const TempleOfficerDashboard = () => {
   const storedTempleId = getAssociatedTempleId(storedUser);
   const [dashboardData, setDashboardData] = useState({});
   const [templeImageUrl, setTempleImageUrl] = useState("");
-  const [poojaCounts, setPoojaCounts] = useState({
-    total: 0,
-    accepted: 0,
-    processing: 0,
-    dispatched: 0,
-    completed: 0,
-    todayReceived: 0,
-  });
+  const [poojaCounts, setPoojaCounts] = useState(EMPTY_POOJA_COUNTS);
+  const [poojaRows, setPoojaRows] = useState([]);
+  const [isChartsLoading, setIsChartsLoading] = useState(true);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
   const [sidebarOpen, setSidebarOpen] = useState(true);
@@ -468,51 +514,94 @@ const TempleOfficerDashboard = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const templeSearchText = storedUser?.templeName || storedUser?.templeAssociated || "";
+  const activeSidebarPage = useMemo(() => {
+    const view = new URLSearchParams(location.search).get("view");
+    return view === "user-pages" ? "userPages" : "dashboard";
+  }, [location.search]);
 
   useEffect(() => {
     const token = localStorage.getItem("templeOfficerToken");
     if (!token) {
+      setTempleOfficerLastRoute("/temple-officer/dashboard");
       navigate("/"); // redirect to login if not logged in
       return;
     }
 
+    let isMounted = true;
+
+    const loadTempleImage = async (templeId) => {
+      if (!templeId) {
+        setTempleImageUrl("");
+        return;
+      }
+
+      try {
+        const templeResponse = await fetchTempleById(templeId);
+        if (!isMounted) return;
+        setTempleImageUrl(getTempleImageUrl(templeResponse?.data));
+      } catch (templeError) {
+        console.error("Unable to load temple image", templeError);
+        if (!isMounted) return;
+        setTempleImageUrl("");
+      }
+    };
+
     const fetchDashboardData = async () => {
       setIsLoading(true);
+      setError(null);
       try {
-        const [dashboardResponse, poojaRows] = await Promise.all([
-          fetchTempleOfficerDashboard(),
-          fetchAllPoojaRequests(templeSearchText),
-        ]);
+        const dashboardResponse = await fetchTempleOfficerDashboard();
+        if (!isMounted) return;
+
         const dashboardPayload = dashboardResponse?.data || {};
         setDashboardData(dashboardPayload);
-        setPoojaCounts(getPoojaCounts(poojaRows));
-
-        const templeIdFromPoojaList = extractTempleIdFromPoojaRows(poojaRows);
-        const templeId =
-          templeIdFromPoojaList || storedTempleId || getAssociatedTempleId(dashboardPayload);
-
-        if (!templeId) {
-          setTempleImageUrl("");
-          return;
+        const dashboardCounts = getCountsFromDashboardPayload(dashboardPayload);
+        if (dashboardCounts) {
+          setPoojaCounts(dashboardCounts);
         }
 
-        try {
-          const templeResponse = await fetchTempleById(templeId);
-          setTempleImageUrl(getTempleImageUrl(templeResponse?.data));
-        } catch (templeError) {
-          console.error("Unable to load temple image", templeError);
-          setTempleImageUrl("");
+        const templeIdFromDashboard = storedTempleId || getAssociatedTempleId(dashboardPayload);
+        void loadTempleImage(templeIdFromDashboard);
+        setIsLoading(false);
+        setIsChartsLoading(true);
+
+        const poojaRows = await fetchAllPoojaRequestRows({
+          search: templeSearchText,
+          size: 100,
+          maxPages: 50,
+          concurrency: 6,
+        });
+        if (!isMounted) return;
+        setPoojaRows(poojaRows);
+        setPoojaCounts(getPoojaCounts(poojaRows));
+        setIsChartsLoading(false);
+
+        if (!templeIdFromDashboard) {
+          const templeIdFromPoojaList = extractTempleIdFromPoojaRows(poojaRows);
+          if (templeIdFromPoojaList) {
+            void loadTempleImage(templeIdFromPoojaList);
+          }
         }
       } catch (error) {
         console.error(error);
+        if (!isMounted) return;
+        setPoojaRows([]);
+        setIsChartsLoading(false);
         setError(getApiErrorMessage(error, "Error loading dashboard"));
-      } finally {
         setIsLoading(false);
       }
     };
 
     fetchDashboardData();
+
+    return () => {
+      isMounted = false;
+    };
   }, [navigate, templeSearchText, storedTempleId]);
+
+  useEffect(() => {
+    setTempleOfficerLastRoute(`${location.pathname}${location.search}${location.hash}`);
+  }, [location.hash, location.pathname, location.search]);
 
   useEffect(() => {
     const loginMessage = location.state?.loginMessage;
@@ -560,6 +649,20 @@ const TempleOfficerDashboard = () => {
     }
   };
 
+  const handleOpenUserPages = () => {
+    navigate("/temple-officer/dashboard?view=user-pages");
+    if (window.innerWidth <= 900) {
+      setSidebarOpen(false);
+    }
+  };
+
+  const handleOpenDashboardPage = () => {
+    navigate("/temple-officer/dashboard");
+    if (window.innerWidth <= 900) {
+      setSidebarOpen(false);
+    }
+  };
+
   if (error) return <div className="state-text">Error: {error}</div>;
   if (isLoading) return <div className="state-text">Loading dashboard...</div>;
   const templeName =
@@ -577,8 +680,7 @@ const TempleOfficerDashboard = () => {
       <aside className="sidebar-menu">
         <div className="sidebar-top">
           <div className="sidebar-brand-wrap">
-            <div className="sidebar-brand-logo">D</div>
-            <h3 className="sidebar-brand">Devalayas</h3>
+            <img src={sidebarBrandLogo} alt="Devalayas" className="sidebar-brand-image" />
           </div>
           <button
             type="button"
@@ -604,7 +706,12 @@ const TempleOfficerDashboard = () => {
 
         <div className="sidebar-nav-title">Navigation</div>
         <nav className="sidebar-nav">
-          <button type="button" className="sidebar-nav-btn active" data-label="Dashboard">
+          <button
+            type="button"
+            className={`sidebar-nav-btn ${activeSidebarPage === "dashboard" ? "active" : ""}`}
+            data-label="Dashboard"
+            onClick={handleOpenDashboardPage}
+          >
             <span className="sidebar-nav-icon">DB</span>
             <span className="sidebar-nav-text">Dashboard</span>
           </button>
@@ -630,7 +737,12 @@ const TempleOfficerDashboard = () => {
             <span className="sidebar-nav-icon">RP</span>
             <span className="sidebar-nav-text">Reports</span>
           </button>
-          <button type="button" className="sidebar-nav-btn" data-label="User Pages">
+          <button
+            type="button"
+            className={`sidebar-nav-btn ${activeSidebarPage === "userPages" ? "active" : ""}`}
+            data-label="User Pages"
+            onClick={handleOpenUserPages}
+          >
             <span className="sidebar-nav-icon">UP</span>
             <span className="sidebar-nav-text">User Pages</span>
           </button>
@@ -652,65 +764,89 @@ const TempleOfficerDashboard = () => {
       </aside>
 
       <div className="dashboard-container">
-        <div className="dashboard-top-navbar">
-          <div className="dashboard-top-navbar-center">
-            <h2 className="dashboard-top-navbar-temple-name">
-              {templeName || "Temple Name"}
-            </h2>
-          </div>
-          <div className="dashboard-top-navbar-right">
-            {templeImageUrl ? (
+        {activeSidebarPage !== "userPages" && (
+          <div className="dashboard-top-navbar">
+            <div className="dashboard-top-navbar-center">
               <img
-                src={templeImageUrl}
-                alt={templeName ? `${templeName} temple` : "Temple image"}
-                className="dashboard-top-navbar-image"
+                src={templeNameLogo}
+                alt="Devalayas logo"
+                className="dashboard-top-navbar-name-logo"
                 loading="lazy"
               />
-            ) : (
-              <div className="dashboard-top-navbar-image dashboard-top-navbar-image-placeholder">
-                No Image
-              </div>
-            )}
-          </div>
-        </div>
-
-        <div className="dashboard-header">
-          <div className="dashboard-header-left">
-            {!sidebarOpen && (
-              <button
-                type="button"
-                className="sidebar-open-btn"
-                onClick={() => setSidebarOpen(true)}
-                aria-label="Open sidebar"
-              >
-                <MenuLinesIcon className="sidebar-icon-lines" />
-                <span className="sr-only">Open menu</span>
-              </button>
-            )}
-            <div>
-              <p className="dashboard-title">Temple Officer Dashboard</p>
+              <h2 className="dashboard-top-navbar-temple-name">
+                {templeName || "Temple Name"}
+              </h2>
+            </div>
+            <div className="dashboard-top-navbar-right">
+              {templeImageUrl ? (
+                <img
+                  src={templeImageUrl}
+                  alt={templeName ? `${templeName} temple` : "Temple image"}
+                  className="dashboard-top-navbar-image"
+                  loading="lazy"
+                />
+              ) : (
+                <div className="dashboard-top-navbar-image dashboard-top-navbar-image-placeholder">
+                  No Image
+                </div>
+              )}
             </div>
           </div>
-        </div>
+        )}
+
+        {(activeSidebarPage !== "userPages" || !sidebarOpen) && (
+          <div className="dashboard-header">
+            <div className="dashboard-header-left">
+              {!sidebarOpen && (
+                <button
+                  type="button"
+                  className="sidebar-open-btn"
+                  onClick={() => setSidebarOpen(true)}
+                  aria-label="Open sidebar"
+                >
+                  <MenuLinesIcon className="sidebar-icon-lines" />
+                  <span className="sr-only">Open menu</span>
+                </button>
+              )}
+              <div>
+                {activeSidebarPage !== "userPages" && (
+                  <p className="dashboard-title">Temple Officer Dashboard</p>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
 
         {successMessage && <div className="success-banner">{successMessage}</div>}
 
-        <div className="dashboard-cards">
-          {DASHBOARD_STATUS_CARDS.map((card) => (
-            <div
-              key={card.key}
-              className={`card ${card.className} card-clickable`}
-              role="button"
-              tabIndex={0}
-              onClick={() => handleOpenRequestList({ status: card.filterStatus, recentDays: card.recentDays || 0 })}
-              onKeyDown={(event) => handleCardKeyDown(event, card)}
-            >
-              <h3>{card.label}</h3>
-              <p>{formatCount(poojaCounts[card.key])}</p>
-              <span className="card-meta">{card.helperText}</span>
-            </div>
-          ))}
-        </div>
+        {activeSidebarPage === "dashboard" ? (
+          <div className="dashboard-cards row g-3 mt-1">
+            {DASHBOARD_STATUS_CARDS.map((card) => (
+              <div key={card.key} className="col-12 col-md-6 col-xl-4">
+                <div
+                  className={`dashboard-stat-card ${card.className} card-clickable`}
+                  role="button"
+                  tabIndex={0}
+                  onClick={() => handleOpenRequestList({ status: card.filterStatus, recentDays: card.recentDays || 0 })}
+                  onKeyDown={(event) => handleCardKeyDown(event, card)}
+                >
+                  <div className="dashboard-stat-card-top">
+                    <h3>{card.label}</h3>
+                    <span className="dashboard-stat-card-icon" aria-hidden="true">
+                      <i className={`bi ${card.iconClass}`} />
+                    </span>
+                  </div>
+                  <p>{formatCount(poojaCounts[card.key])}</p>
+                  <span className="card-meta">{card.helperText}</span>
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <section id="user-pages-charts" style={{ paddingBottom: 96 }}>
+            <DashboardCharts rows={poojaRows} isLoading={isChartsLoading} />
+          </section>
+        )}
 
         <button onClick={handleLogout} className="logout-btn dashboard-logout-floating">Logout</button>
       </div>

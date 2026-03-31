@@ -1,8 +1,16 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { getApiErrorMessage } from "../api/errors";
-import { bulkUpdatePoojaRequestStatus, fetchPoojaRequestList } from "../api/templeOfficerApi";
-import { getInitials, getStoredTempleOfficerUser } from "../utils/templeOfficerSession";
+import {
+  bulkUpdatePoojaRequestStatus,
+  fetchAllPoojaRequestRows,
+  fetchPoojaRequestList,
+} from "../api/templeOfficerApi";
+import {
+  getInitials,
+  getStoredTempleOfficerUser,
+  setTempleOfficerLastRoute,
+} from "../utils/templeOfficerSession";
 import "../Styles/TempleOfficerDashboard.css";
 import "../Styles/PoojaRequests.css";
 
@@ -33,6 +41,7 @@ const stripHtml = (value) => {
 };
 
 const normalizeStatus = (value) => stripHtml(value).toLowerCase();
+const toCanonicalStatus = (value) => normalizeStatus(value);
 
 const toStatusLabel = (value) =>
   value
@@ -42,24 +51,31 @@ const toStatusLabel = (value) =>
     .join(" ");
 
 const STATUS_UPDATE_OPTIONS = ["Accepted", "Processing", "Dispatched", "Completed"];
-const STATUS_FILTER_OPTIONS = ["accepted", "processing", "dispatched", "completed"];
+const STATUS_FILTER_OPTIONS = ["accepted", "pending", "processing", "dispatched", "completed"];
+const STATUS_FILTER_API_VALUES = {
+  accepted: "Accepted",
+  pending: "Pending",
+  processing: "Processing",
+  dispatched: "Dispatched",
+  completed: "Completed",
+};
 const PAGE_SIZE_ALL = "all";
 const ALL_ROWS_FETCH_SIZE = 100;
 const MAX_ALL_ROWS_PAGES = 100;
 const toApiStatusValue = (value) => {
-  const normalized = normalizeStatus(value);
-  const matched = STATUS_UPDATE_OPTIONS.find((option) => normalizeStatus(option) === normalized);
-  return matched || "";
+  const normalized = toCanonicalStatus(value);
+  return STATUS_FILTER_API_VALUES[normalized] || "";
 };
 
 const matchesStatusFilter = (rowStatus, selectedStatus) => {
   if (!selectedStatus) return true;
-  return normalizeStatus(rowStatus) === selectedStatus;
+  return toCanonicalStatus(rowStatus) === toCanonicalStatus(selectedStatus);
 };
 
 const toClassToken = (value) => normalizeStatus(value).replace(/[^a-z0-9]+/g, "-");
 const getEditableStatus = (value) => {
-  const normalizedValue = normalizeStatus(value);
+  const canonicalStatus = toCanonicalStatus(value);
+  const normalizedValue = canonicalStatus === "pending" ? "processing" : canonicalStatus;
   const match = STATUS_UPDATE_OPTIONS.find((option) => normalizeStatus(option) === normalizedValue);
   return match || STATUS_UPDATE_OPTIONS[0];
 };
@@ -203,17 +219,6 @@ const normalizeRows = (rawData) => {
   });
 };
 
-const extractRawRows = (rawData) =>
-  Array.isArray(rawData)
-    ? rawData
-    : Array.isArray(rawData?.data)
-    ? rawData.data
-    : Array.isArray(rawData?.results)
-      ? rawData.results
-      : Array.isArray(rawData?.orders)
-        ? rawData.orders
-        : [];
-
 const parsePageSizeValue = (value) => {
   if (String(value).trim() === PAGE_SIZE_ALL) {
     return PAGE_SIZE_ALL;
@@ -315,7 +320,7 @@ const PoojaRequests = () => {
   const location = useLocation();
   const initialStatusFromQuery = useMemo(() => {
     const status = new URLSearchParams(location.search).get("status");
-    return normalizeStatus(status || "");
+    return toCanonicalStatus(status || "");
   }, [location.search]);
   const initialRecentDaysFromQuery = useMemo(() => {
     const value = new URLSearchParams(location.search).get("recent_days");
@@ -361,6 +366,7 @@ const PoojaRequests = () => {
 
   useEffect(() => {
     if (!localStorage.getItem("templeOfficerToken")) {
+      setTempleOfficerLastRoute(`${location.pathname}${location.search}${location.hash}`);
       navigate("/");
       return;
     }
@@ -376,37 +382,18 @@ const PoojaRequests = () => {
         let paginationMeta = { totalPages: 1, totalItems: 0 };
 
         if (isAllRowsMode) {
-          const allRawRows = [];
-          let firstPageTotalItems = 0;
-
-          for (let page = 1; page <= MAX_ALL_ROWS_PAGES; page += 1) {
-            const response = await fetchPoojaRequestList({
-              page,
-              size: ALL_ROWS_FETCH_SIZE,
-              status: toApiStatusValue(appliedFilters.status),
-              search: templeName,
-            });
-            const payload = response?.data;
-            const pageRawRows = extractRawRows(payload);
-            if (!pageRawRows.length) break;
-
-            allRawRows.push(...pageRawRows);
-            const metaForPage = extractPaginationMeta(payload, page, ALL_ROWS_FETCH_SIZE);
-            if (page === 1) {
-              firstPageTotalItems = metaForPage.totalItems;
-            }
-
-            const hasMoreByMeta = metaForPage.totalPages > page;
-            const hasLikelyMoreBySize = pageRawRows.length >= ALL_ROWS_FETCH_SIZE;
-            if (!hasMoreByMeta && !hasLikelyMoreBySize) {
-              break;
-            }
-          }
+          const allRawRows = await fetchAllPoojaRequestRows({
+            search: templeName,
+            status: toApiStatusValue(appliedFilters.status),
+            size: ALL_ROWS_FETCH_SIZE,
+            maxPages: MAX_ALL_ROWS_PAGES,
+            concurrency: 6,
+          });
 
           normalizedRows = normalizeRows(allRawRows);
           paginationMeta = {
             totalPages: 1,
-            totalItems: firstPageTotalItems || allRawRows.length,
+            totalItems: allRawRows.length,
           };
           setCurrentPage(1);
         } else {
@@ -442,7 +429,21 @@ const PoojaRequests = () => {
     };
 
     fetchRequestList();
-  }, [navigate, templeName, currentPage, pageSize, appliedFilters.status, isAllRowsMode]);
+  }, [
+    currentPage,
+    isAllRowsMode,
+    location.hash,
+    location.pathname,
+    location.search,
+    navigate,
+    pageSize,
+    templeName,
+    appliedFilters.status,
+  ]);
+
+  useEffect(() => {
+    setTempleOfficerLastRoute(`${location.pathname}${location.search}${location.hash}`);
+  }, [location.hash, location.pathname, location.search]);
 
   useEffect(() => {
     setDraftFilters((prev) => ({
@@ -513,7 +514,7 @@ const PoojaRequests = () => {
     const options = new Set(STATUS_FILTER_OPTIONS);
 
     rows.forEach((row) => {
-      const status = normalizeStatus(row.status);
+      const status = toCanonicalStatus(row.status);
       if (status && status !== "-") {
         options.add(status);
       }
@@ -781,7 +782,12 @@ const PoojaRequests = () => {
             <span className="sidebar-nav-icon">RP</span>
             <span className="sidebar-nav-text">Reports</span>
           </button>
-          <button type="button" className="sidebar-nav-btn" data-label="User Pages">
+          <button
+            type="button"
+            className="sidebar-nav-btn"
+            data-label="User Pages"
+            onClick={() => navigate("/temple-officer/dashboard?view=user-pages")}
+          >
             <span className="sidebar-nav-icon">UP</span>
             <span className="sidebar-nav-text">User Pages</span>
           </button>

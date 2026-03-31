@@ -191,7 +191,12 @@ const OrderDetails = () => {
             <span className="sidebar-nav-icon">RP</span>
             <span className="sidebar-nav-text">Reports</span>
           </button>
-          <button type="button" className="sidebar-nav-btn" data-label="User Pages">
+          <button
+            type="button"
+            className="sidebar-nav-btn"
+            data-label="User Pages"
+            onClick={() => navigate("/temple-officer/dashboard?view=user-pages")}
+          >
             <span className="sidebar-nav-icon">UP</span>
             <span className="sidebar-nav-text">User Pages</span>
           </button>

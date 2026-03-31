@@ -1,8 +1,12 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { getApiErrorMessage } from "../api/errors";
-import { fetchPoojaRequestList } from "../api/templeOfficerApi";
-import { getInitials, getStoredTempleOfficerUser } from "../utils/templeOfficerSession";
+import { fetchAllPoojaRequestRows } from "../api/templeOfficerApi";
+import {
+  getInitials,
+  getStoredTempleOfficerUser,
+  setTempleOfficerLastRoute,
+} from "../utils/templeOfficerSession";
 import "../Styles/TempleOfficerDashboard.css";
 import "../Styles/PoojaRequests.css";
 import "../Styles/TransactionTable.css";
@@ -230,52 +234,9 @@ const normalizeTransactionRows = (rawData) => {
   });
 };
 
-const fetchAllPoojaRequestRows = async (search = "") => {
-  const allRows = [];
-  let page = 1;
-
-  while (page <= MAX_ALL_ROWS_PAGES) {
-    const response = await fetchPoojaRequestList({
-      page,
-      size: ALL_ROWS_FETCH_SIZE,
-      search,
-    });
-    const payload = response?.data;
-    const pageRows = extractRawRows(payload);
-
-    if (!pageRows.length) {
-      break;
-    }
-
-    allRows.push(...pageRows);
-
-    const container =
-      payload?.data && typeof payload.data === "object" && !Array.isArray(payload.data)
-        ? payload.data
-        : payload;
-
-    const totalPages = Number(container?.total_pages || container?.pages || container?.totalPages || 0);
-    const currentPage = Number(container?.current_page || container?.page || page);
-    const hasNext = Boolean(container?.next);
-
-    if (hasNext) {
-      page += 1;
-      continue;
-    }
-
-    if (totalPages && currentPage < totalPages) {
-      page = currentPage + 1;
-      continue;
-    }
-
-    break;
-  }
-
-  return allRows;
-};
-
 const TransactionTable = () => {
   const storedUser = getStoredTempleOfficerUser();
+  const location = useLocation();
   const navigate = useNavigate();
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [rows, setRows] = useState([]);
@@ -295,6 +256,7 @@ const TransactionTable = () => {
 
   useEffect(() => {
     if (!localStorage.getItem("templeOfficerToken")) {
+      setTempleOfficerLastRoute(`${location.pathname}${location.search}${location.hash}`);
       navigate("/");
       return;
     }
@@ -304,7 +266,12 @@ const TransactionTable = () => {
       setError("");
 
       try {
-        const rawRows = await fetchAllPoojaRequestRows(templeName);
+        const rawRows = await fetchAllPoojaRequestRows({
+          search: templeName,
+          size: ALL_ROWS_FETCH_SIZE,
+          maxPages: MAX_ALL_ROWS_PAGES,
+          concurrency: 6,
+        });
         setRows(normalizeTransactionRows(rawRows));
       } catch (fetchError) {
         console.error(fetchError);
@@ -316,7 +283,11 @@ const TransactionTable = () => {
     };
 
     fetchTransactions();
-  }, [navigate, templeName]);
+  }, [location.hash, location.pathname, location.search, navigate, templeName]);
+
+  useEffect(() => {
+    setTempleOfficerLastRoute(`${location.pathname}${location.search}${location.hash}`);
+  }, [location.hash, location.pathname, location.search]);
 
   useEffect(() => {
     setCurrentPage(1);
@@ -552,7 +523,12 @@ const TransactionTable = () => {
             <span className="sidebar-nav-icon">RP</span>
             <span className="sidebar-nav-text">Reports</span>
           </button>
-          <button type="button" className="sidebar-nav-btn" data-label="User Pages">
+          <button
+            type="button"
+            className="sidebar-nav-btn"
+            data-label="User Pages"
+            onClick={() => navigate("/temple-officer/dashboard?view=user-pages")}
+          >
             <span className="sidebar-nav-icon">UP</span>
             <span className="sidebar-nav-text">User Pages</span>
           </button>
