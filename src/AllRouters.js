@@ -6,6 +6,7 @@ const OrderDetails = lazy(() => import("./components/OrderDetails"));
 const TempleOfficerDashboard = lazy(() => import("./components/TempleOfficerDashboard"));
 const TempleOfficerLogin = lazy(() => import("./components/TempleOfficerLogin"));
 const TransactionTable = lazy(() => import("./components/TransactionTable"));
+const Report = lazy(() => import("./components/Report"));
 
 const RouteLoader = () => (
   <div
@@ -34,6 +35,7 @@ const AllRouters = () => {
           <Route path="/temple-officer/login" element={<TempleOfficerLogin />} />
           <Route path="/temple-officer/dashboard" element={<TempleOfficerDashboard />} />
           <Route path="/temple-officer/transactions" element={<TransactionTable />} />
+          <Route path="/temple-officer/reports" element={<Report />} />
           <Route path="/temple-officer/requests" element={<PoojaRequests />} />
           <Route path="/temple-officer/requests/:requestId" element={<OrderDetails />} />
         </Routes>

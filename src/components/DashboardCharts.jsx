@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import {
   ResponsiveContainer,
   ComposedChart,
@@ -15,48 +15,12 @@ import {
   Cell,
   LineChart,
 } from "recharts";
+import { dashboardData } from "../data/dashboardData";
+import { getApiErrorMessage } from "../api/errors";
+import { fetchAllPoojaRequestRows } from "../api/templeOfficerApi";
+import { buildDashboardDataFromPoojaRows } from "../utils/dashboardChartData";
 
 const STATUS_COLORS = ["#20c997", "#0d6efd", "#ffc107", "#dc3545"];
-
-const monthlyRevenueData = [
-  { month: "Jan", revenue: 540000, previous: 480000, orders: 980 },
-  { month: "Feb", revenue: 610000, previous: 520000, orders: 1085 },
-  { month: "Mar", revenue: 690000, previous: 580000, orders: 1210 },
-  { month: "Apr", revenue: 645000, previous: 605000, orders: 1160 },
-  { month: "May", revenue: 735000, previous: 630000, orders: 1305 },
-  { month: "Jun", revenue: 810000, previous: 710000, orders: 1410 },
-  { month: "Jul", revenue: 780000, previous: 690000, orders: 1370 },
-  { month: "Aug", revenue: 865000, previous: 740000, orders: 1495 },
-  { month: "Sep", revenue: 915000, previous: 790000, orders: 1565 },
-  { month: "Oct", revenue: 990000, previous: 860000, orders: 1640 },
-  { month: "Nov", revenue: 1075000, previous: 930000, orders: 1765 },
-  { month: "Dec", revenue: 1150000, previous: 995000, orders: 1880 },
-];
-
-const yearlyRevenueData = [
-  { year: "2022", revenue: 6720000 },
-  { year: "2023", revenue: 7810000 },
-  { year: "2024", revenue: 8960000 },
-  { year: "2025", revenue: 10130000 },
-  { year: "2026", revenue: 11500000 },
-];
-
-const orderStatusData = [
-  { name: "Completed", value: 64 },
-  { name: "Processing", value: 18 },
-  { name: "Pending", value: 12 },
-  { name: "Cancelled", value: 6 },
-];
-
-const dailyOrdersData = [
-  { day: "Mon", orders: 122 },
-  { day: "Tue", orders: 138 },
-  { day: "Wed", orders: 126 },
-  { day: "Thu", orders: 149 },
-  { day: "Fri", orders: 162 },
-  { day: "Sat", orders: 173 },
-  { day: "Sun", orders: 159 },
-];
 
 const rupeeTick = (value) => `Rs ${(value / 100000).toFixed(1)}L`;
 const orderTick = (value) => `${Math.round(value / 100) / 10}k`;
@@ -73,7 +37,83 @@ const DashboardCard = ({ title, subtitle, children, chartHeight = 320 }) => (
   </div>
 );
 
-const DashboardCharts = () => {
+const DashboardCharts = ({ data, rows, isLoading = false, loadFromApi = false, search = "" }) => {
+  const rowsDerivedData = useMemo(() => {
+    if (!Array.isArray(rows)) return null;
+    return buildDashboardDataFromPoojaRows(rows);
+  }, [rows]);
+
+  const [apiData, setApiData] = useState(null);
+  const [apiLoading, setApiLoading] = useState(false);
+  const [apiError, setApiError] = useState("");
+
+  const shouldFetchFromApi = loadFromApi && !data && !Array.isArray(rows);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    const loadApiCharts = async () => {
+      if (!shouldFetchFromApi) return;
+
+      setApiLoading(true);
+      setApiError("");
+
+      try {
+        const apiRows = await fetchAllPoojaRequestRows({
+          search: search || "",
+          size: 100,
+          maxPages: 100,
+          concurrency: 6,
+        });
+
+        if (!isMounted) return;
+        setApiData(buildDashboardDataFromPoojaRows(apiRows));
+      } catch (fetchError) {
+        if (!isMounted) return;
+        console.error("Unable to load chart analytics.", fetchError);
+        setApiError(getApiErrorMessage(fetchError, "Unable to load chart analytics right now."));
+      } finally {
+        if (isMounted) {
+          setApiLoading(false);
+        }
+      }
+    };
+
+    loadApiCharts();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [search, shouldFetchFromApi]);
+
+  const effectiveData = data || rowsDerivedData || apiData || dashboardData;
+  const showLoading = isLoading || apiLoading;
+  const showError = !showLoading && shouldFetchFromApi && Boolean(apiError);
+
+  const monthlyRevenueData = effectiveData.monthlyRevenue.labels.map((month, index) => ({
+    month,
+    revenue: effectiveData.monthlyRevenue.data[index],
+    trend: Math.round(
+      (effectiveData.monthlyRevenue.data[index - 1] ?? effectiveData.monthlyRevenue.data[index]) * 0.98
+    ),
+  }));
+
+  const monthlyOrdersData = effectiveData.monthlyOrders.labels.map((month, index) => ({
+    month,
+    orders: effectiveData.monthlyOrders.data[index],
+  }));
+
+  const yearlyRevenueData = effectiveData.yearlyRevenue.labels.map((year, index) => ({
+    year: String(year),
+    revenue: effectiveData.yearlyRevenue.data[index],
+  }));
+
+  const dailyOrdersData = effectiveData.dailyOrders.labels.map((day, index) => ({
+    day,
+    orders: effectiveData.dailyOrders.data[index],
+  }));
+
+  const orderStatusData = effectiveData.ordersByStatus;
   const totalOrders = orderStatusData.reduce((sum, item) => sum + item.value, 0);
 
   return (
@@ -119,6 +159,24 @@ const DashboardCharts = () => {
           flex: 1 1 auto;
           min-height: 0;
         }
+        .dv-state {
+          min-height: 220px;
+          border: 1px dashed rgba(100, 116, 139, 0.45);
+          border-radius: 10px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-weight: 600;
+          color: #475569;
+          background: #f8fafc;
+          text-align: center;
+          padding: 16px;
+        }
+        .dv-state-error {
+          color: #b91c1c;
+          border-color: rgba(185, 28, 28, 0.35);
+          background: #fff1f2;
+        }
         @media (min-width: 1200px) {
           .dv-analytics-root {
             padding: 10px;
@@ -150,11 +208,15 @@ const DashboardCharts = () => {
         }
       `}</style>
 
+      {showLoading ? <div className="dv-state">Loading chart data from API...</div> : null}
+      {showError ? <div className="dv-state dv-state-error">{apiError}</div> : null}
+      {!showLoading && !showError ? (
+        <>
       <div className="row g-3 dv-row-top">
         <div className="col-12 col-xl-8">
           <DashboardCard
             title="Monthly Revenue"
-            subtitle="Shows business growth (most critical metric)"
+            subtitle="Most important business chart. Shows growth month by month."
             chartHeight={320}
           >
             <ResponsiveContainer width="100%" height="100%">
@@ -168,18 +230,16 @@ const DashboardCharts = () => {
                 <CartesianGrid stroke="#eef2f7" vertical={false} />
                 <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: "#7a8699" }} />
                 <YAxis yAxisId="left" axisLine={false} tickLine={false} tickFormatter={rupeeTick} tick={{ fontSize: 12, fill: "#7a8699" }} />
-                <YAxis yAxisId="right" orientation="right" axisLine={false} tickLine={false} tickFormatter={orderTick} tick={{ fontSize: 12, fill: "#7a8699" }} />
                 <Tooltip
                   formatter={(value, name) => {
-                    if (name === "Revenue" || name === "Last Year") return [`Rs ${Number(value).toLocaleString("en-IN")}`, name];
+                    if (name === "Revenue" || name === "Trend") return [`Rs ${Number(value).toLocaleString("en-IN")}`, name];
                     return [Number(value).toLocaleString("en-IN"), name];
                   }}
                   contentStyle={{ borderRadius: 10, border: "1px solid #e9ecef", boxShadow: "0 8px 20px rgba(15,23,42,0.08)" }}
                 />
                 <Legend wrapperStyle={{ fontSize: 12 }} />
                 <Bar yAxisId="left" dataKey="revenue" name="Revenue" fill="url(#dvRevenueBarGradient)" radius={[8, 8, 0, 0]} barSize={24} />
-                <Line yAxisId="left" type="monotone" dataKey="previous" name="Last Year" stroke="#6f42c1" strokeWidth={2.2} dot={false} />
-                <Line yAxisId="right" type="monotone" dataKey="orders" name="Orders" stroke="#ff9933" strokeWidth={2.2} dot={{ r: 2.5 }} />
+                <Line yAxisId="left" type="monotone" dataKey="trend" name="Trend" stroke="#6f42c1" strokeWidth={2.2} dot={false} />
               </ComposedChart>
             </ResponsiveContainer>
           </DashboardCard>
@@ -188,7 +248,7 @@ const DashboardCharts = () => {
         <div className="col-12 col-xl-4">
           <DashboardCard
             title="Orders by Status"
-            subtitle="Helps monitor success, pending, failures"
+            subtitle="Helps track completed, pending, processing, and cancelled orders."
             chartHeight={320}
           >
             <ResponsiveContainer width="100%" height="100%">
@@ -216,13 +276,13 @@ const DashboardCharts = () => {
                 </Pie>
                 <circle cx="50%" cy="50%" r="55" fill="url(#dvSaffronHalo)" />
                 <text x="50%" y="48%" textAnchor="middle" dominantBaseline="central" fill="#1f2a44" fontSize="28" fontWeight="700">
-                  {totalOrders}%
+                  {totalOrders.toLocaleString("en-IN")}
                 </text>
                 <text x="50%" y="58%" textAnchor="middle" dominantBaseline="central" fill="#7b8794" fontSize="12">
-                  Total Mix
+                  Total Orders
                 </text>
                 <Tooltip
-                  formatter={(value) => [`${value}%`, "Share"]}
+                  formatter={(value) => [Number(value).toLocaleString("en-IN"), "Orders"]}
                   contentStyle={{ borderRadius: 10, border: "1px solid #e9ecef", boxShadow: "0 8px 20px rgba(15,23,42,0.08)" }}
                 />
                 <Legend verticalAlign="bottom" iconType="circle" wrapperStyle={{ fontSize: 12 }} />
@@ -236,11 +296,11 @@ const DashboardCharts = () => {
         <div className="col-12 col-md-6 col-xl-4">
           <DashboardCard
             title="Monthly Orders"
-            subtitle="Tracks user activity and demand"
+            subtitle="Shows order volume trend and user activity."
             chartHeight={230}
           >
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={monthlyRevenueData} margin={{ top: 6, right: 8, left: 0, bottom: 0 }}>
+              <BarChart data={monthlyOrdersData} margin={{ top: 6, right: 8, left: 0, bottom: 0 }}>
                 <CartesianGrid stroke="#eef2f7" vertical={false} />
                 <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: "#7a8699" }} />
                 <YAxis axisLine={false} tickLine={false} tickFormatter={orderTick} tick={{ fontSize: 12, fill: "#7a8699" }} />
@@ -257,7 +317,7 @@ const DashboardCharts = () => {
         <div className="col-12 col-md-6 col-xl-4">
           <DashboardCard
             title="Yearly Revenue"
-            subtitle="Long-term performance overview"
+            subtitle="Good for long-term performance overview."
             chartHeight={230}
           >
             <ResponsiveContainer width="100%" height="100%">
@@ -278,7 +338,7 @@ const DashboardCharts = () => {
         <div className="col-12 col-md-12 col-xl-4">
           <DashboardCard
             title="Daily Orders Trend"
-            subtitle="Shows short-term trends and spikes"
+            subtitle="Useful for short-term activity and demand spikes."
             chartHeight={230}
           >
             <ResponsiveContainer width="100%" height="100%">
@@ -296,6 +356,8 @@ const DashboardCharts = () => {
           </DashboardCard>
         </div>
       </div>
+        </>
+      ) : null}
     </section>
   );
 };

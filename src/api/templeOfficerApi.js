@@ -3,8 +3,10 @@ import { apiClient } from "./client";
 const TEMPLE_OFFICER_LOGIN_URL = "/api/v1/auth/temple-officer/";
 const TEMPLE_OFFICER_DASHBOARD_URL = "/api/v1/pujari/dashboard/";
 const POOJA_REQUEST_LIST_URL = "/api/v1/devotee/pooja_request/list/";
+const EXPORT_POOJA_REPORT_URL = "/api/v1/pdf/export-pooja-report/";
 const DEVOTEE_TEMPLE_URL = "/api/v1/devotee/temple";
-const POOJA_REQUEST_BULK_UPDATE_STATUS_URL = "https://beta.devalayas.com/api/v1/request/bulk-update-status/";
+const POOJA_REQUEST_BULK_UPDATE_STATUS_URL = "/api/v1/request/bulk-update-status/";
+const BULK_STATUS_CHOICES = new Set(["Accepted", "Processing", "Dispatched", "Completed"]);
 
 const templeOfficerLoginRequest = (credentials) =>
   apiClient.post(TEMPLE_OFFICER_LOGIN_URL, credentials, {
@@ -26,6 +28,15 @@ export const loginTempleOfficer = async ({ email, password }) => {
 
 export const fetchTempleOfficerDashboard = () =>
   apiClient.get(TEMPLE_OFFICER_DASHBOARD_URL);
+
+export const exportPoojaReportPdf = ({ temple, from_date, to_date }) =>
+  apiClient.post(
+    EXPORT_POOJA_REPORT_URL,
+    { temple, from_date, to_date },
+    {
+      responseType: "blob",
+    }
+  );
 
 export const fetchTempleById = async (templeId) => {
   const normalizedTempleId = String(templeId || "").trim();
@@ -181,42 +192,16 @@ export const bulkUpdatePoojaRequestStatus = async ({ requestIds, status }) => {
     ]
     : [];
 
-  const stringIds = Array.isArray(requestIds)
-    ? [...new Set(requestIds.map((id) => String(id).trim()).filter(Boolean))]
-    : [];
-
-  if (!integerIds.length && !stringIds.length) {
+  if (!integerIds.length) {
     throw new Error("No valid request IDs selected for status update.");
   }
 
-  const payloads = [
-    { request_ids: integerIds, status },
-    { request_ids: stringIds, status },
-    { request_id: integerIds, status },
-    { ids: integerIds, status },
-  ].filter((payload) => Array.isArray(Object.values(payload)[0]) && Object.values(payload)[0].length > 0);
-
-  let latestError = null;
-
-  for (let payloadIndex = 0; payloadIndex < payloads.length; payloadIndex += 1) {
-    const payload = payloads[payloadIndex];
-
-    try {
-      return await apiClient.options(POOJA_REQUEST_BULK_UPDATE_STATUS_URL, {
-        data: payload,
-      });
-    } catch (error) {
-      latestError = error;
-      const statusCode = error?.response?.status;
-      const isValidationError = statusCode === 400;
-
-      if (isValidationError && payloadIndex < payloads.length - 1) {
-        continue;
-      }
-
-      throw error;
-    }
+  if (!BULK_STATUS_CHOICES.has(String(status || "").trim())) {
+    throw new Error("Invalid status. Allowed values are Accepted, Processing, Dispatched, Completed.");
   }
 
-  throw latestError || new Error("Unable to update status.");
+  return apiClient.post(POOJA_REQUEST_BULK_UPDATE_STATUS_URL, {
+    status: String(status).trim(),
+    request_ids: integerIds,
+  });
 };

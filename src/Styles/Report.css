@@ -1,0 +1,163 @@
+.report-page {
+  padding-bottom: 24px;
+}
+
+.report-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.report-panel > * {
+  width: 100%;
+}
+
+.report-charts-wrap {
+  background: #ffffff;
+  border: 1px solid rgba(51, 65, 85, 0.12);
+  border-radius: 14px;
+  padding: 12px;
+  box-shadow: 0 8px 22px rgba(15, 23, 42, 0.05);
+}
+
+.report-form-card,
+.report-preview-card {
+  background: #ffffff;
+  border: 1px solid rgba(51, 65, 85, 0.12);
+  border-radius: 14px;
+  padding: 20px;
+  box-shadow: 0 8px 22px rgba(15, 23, 42, 0.05);
+}
+
+.report-form-title {
+  margin: 0 0 14px;
+  font-size: 18px;
+  font-weight: 700;
+  color: #1f2937;
+}
+
+.report-field-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 14px;
+}
+
+.report-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #475569;
+}
+
+.report-field input {
+  border: 1px solid #d1d5db;
+  border-radius: 10px;
+  height: 40px;
+  padding: 8px 10px;
+  font-size: 14px;
+  color: #111827;
+}
+
+.report-field input:focus {
+  outline: none;
+  border-color: #1e3a8a;
+  box-shadow: 0 0 0 3px rgba(30, 58, 138, 0.15);
+}
+
+.report-action-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 18px;
+}
+
+.report-generate-btn:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+
+.report-error {
+  margin: 12px 0 0;
+  color: #b91c1c;
+  font-weight: 600;
+}
+
+.report-preview-card {
+  min-height: 460px;
+  display: flex;
+  flex-direction: column;
+}
+
+.report-preview-frame {
+  width: 100%;
+  min-height: 420px;
+  border: 1px solid rgba(51, 65, 85, 0.2);
+  border-radius: 10px;
+  background: #f8fafc;
+}
+
+.report-empty-state {
+  flex: 1;
+  min-height: 420px;
+  border: 1px dashed rgba(100, 116, 139, 0.5);
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #64748b;
+  font-weight: 600;
+  background: #f8fafc;
+}
+
+.report-date-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.report-date-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.report-date-field label {
+  font-size: 13px;
+  font-weight: 600;
+  color: #475569;
+}
+
+.report-date-field .react-datepicker-wrapper,
+.report-date-field .react-datepicker__input-container {
+  width: 100%;
+}
+
+.report-datepicker-input {
+  width: 100%;
+  border: 1px solid #d1d5db;
+  border-radius: 10px;
+  height: 40px;
+  padding: 8px 10px;
+  font-size: 14px;
+  color: #111827;
+}
+
+.report-datepicker-input:focus {
+  outline: none;
+  border-color: #1e3a8a;
+  box-shadow: 0 0 0 3px rgba(30, 58, 138, 0.15);
+}
+
+.report-datepicker-input:disabled {
+  background: #f1f5f9;
+  color: #94a3b8;
+  cursor: not-allowed;
+}
+
+@media (max-width: 768px) {
+  .report-date-grid {
+    grid-template-columns: 1fr;
+  }
+}

@@ -778,7 +778,12 @@ const PoojaRequests = () => {
             <span className="sidebar-nav-icon">TR</span>
             <span className="sidebar-nav-text">Transactions</span>
           </button>
-          <button type="button" className="sidebar-nav-btn" data-label="Reports">
+          <button
+            type="button"
+            className="sidebar-nav-btn"
+            data-label="Reports"
+            onClick={() => navigate("/temple-officer/reports")}
+          >
             <span className="sidebar-nav-icon">RP</span>
             <span className="sidebar-nav-text">Reports</span>
           </button>

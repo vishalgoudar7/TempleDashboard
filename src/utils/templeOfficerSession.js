@@ -28,6 +28,7 @@ const ALLOWED_TEMPLE_OFFICER_PATHS = new Set([
   "/temple-officer/dashboard",
   "/temple-officer/requests",
   "/temple-officer/transactions",
+  "/temple-officer/reports",
 ]);
 
 const toNormalizedRoute = (route) => {
