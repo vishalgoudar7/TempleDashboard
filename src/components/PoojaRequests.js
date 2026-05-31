@@ -344,9 +344,6 @@ const PoojaRequests = () => {
   const [totalItems, setTotalItems] = useState(0);
   const [rowStatusDrafts, setRowStatusDrafts] = useState({});
   const [updatingRowId, setUpdatingRowId] = useState("");
-  const [selectedRequestIds, setSelectedRequestIds] = useState([]);
-  const [bulkStatusDraft, setBulkStatusDraft] = useState(STATUS_UPDATE_OPTIONS[0]);
-  const [isBulkUpdating, setIsBulkUpdating] = useState(false);
   const [draftFilters, setDraftFilters] = useState({
     createdFrom: initialCreatedRangeFromQuery.from,
     createdTo: initialCreatedRangeFromQuery.to,
@@ -490,17 +487,6 @@ const PoojaRequests = () => {
   }, [rows, search, appliedFilters]);
 
   const visibleRows = useMemo(() => filteredRows, [filteredRows]);
-  const visibleRequestIds = useMemo(
-    () =>
-      visibleRows
-        .map((row) => toNumericRequestId(row.requestId))
-        .filter((requestId) => requestId !== null),
-    [visibleRows]
-  );
-  const selectedRequestIdSet = useMemo(() => new Set(selectedRequestIds), [selectedRequestIds]);
-  const areAllVisibleRowsSelected =
-    visibleRequestIds.length > 0 &&
-    visibleRequestIds.every((requestId) => selectedRequestIdSet.has(requestId));
   const paginationPages = useMemo(() => {
     if (totalPages <= 7) {
       return Array.from({ length: totalPages }, (_, index) => index + 1);
@@ -537,15 +523,6 @@ const PoojaRequests = () => {
     }
   }, [currentPage, totalPages]);
 
-  useEffect(() => {
-    const validRequestIds = new Set(
-      rows
-        .map((row) => toNumericRequestId(row.requestId))
-        .filter((requestId) => requestId !== null)
-    );
-    setSelectedRequestIds((prev) => prev.filter((requestId) => validRequestIds.has(requestId)));
-  }, [rows]);
-
   const handleRowStatusDraftChange = (rowId, nextStatus) => {
     setRowStatusDrafts((prev) => ({ ...prev, [rowId]: nextStatus }));
   };
@@ -572,90 +549,6 @@ const PoojaRequests = () => {
     );
     if (Number.isNaN(responseCount) || responseCount < 0) return fallbackCount;
     return responseCount;
-  };
-
-  const handleToggleAllVisibleRows = (checked) => {
-    if (!visibleRequestIds.length) return;
-
-    setSelectedRequestIds((prev) => {
-      if (checked) {
-        const next = new Set(prev);
-        visibleRequestIds.forEach((requestId) => next.add(requestId));
-        return Array.from(next);
-      }
-
-      const visibleIds = new Set(visibleRequestIds);
-      return prev.filter((requestId) => !visibleIds.has(requestId));
-    });
-  };
-
-  const handleToggleRowSelection = (requestId, checked) => {
-    setSelectedRequestIds((prev) => {
-      if (checked) {
-        return prev.includes(requestId) ? prev : [...prev, requestId];
-      }
-      return prev.filter((id) => id !== requestId);
-    });
-  };
-
-  const handleBulkUpdateSelected = async () => {
-    if (!selectedRequestIds.length) {
-      setActionMessage("Select at least one request to update status.");
-      setActionMessageType("error");
-      return;
-    }
-
-    setIsBulkUpdating(true);
-    setActionMessage("");
-    setActionMessageType("");
-
-    try {
-      const response = await bulkUpdatePoojaRequestStatus({
-        requestIds: selectedRequestIds,
-        status: bulkStatusDraft,
-      });
-      const selectedIds = new Set(selectedRequestIds);
-      const updatedCount = getUpdatedCountFromResponse(response, selectedIds.size);
-
-      if (updatedCount <= 0) {
-        setActionMessage("No request status was updated. Verify the selected request IDs and try again.");
-        setActionMessageType("error");
-        return;
-      }
-
-      setRows((prev) =>
-        prev.map((row) => {
-          const requestId = toNumericRequestId(row.requestId);
-          return requestId && selectedIds.has(requestId)
-            ? { ...row, status: bulkStatusDraft }
-            : row;
-        })
-      );
-      setRowStatusDrafts((prev) => {
-        const next = { ...prev };
-        rows.forEach((row) => {
-          const requestId = toNumericRequestId(row.requestId);
-          if (requestId && selectedIds.has(requestId)) {
-            next[row.rowId] = bulkStatusDraft;
-          }
-        });
-        return next;
-      });
-      setSelectedRequestIds([]);
-      setActionMessage(
-        `Status updated successfully for ${updatedCount} request(s).`
-      );
-      setActionMessageType("success");
-    } catch (updateError) {
-      console.error(updateError);
-      setActionMessage(
-        extractStatusError(updateError) ||
-        getApiErrorMessage(updateError, "Unable to update selected request statuses.")
-      );
-      setActionMessageType("error");
-    } finally {
-      setIsBulkUpdating(false);
-    }
   };
 
   const handleUpdateRowStatus = async (row) => {
@@ -945,30 +838,6 @@ const PoojaRequests = () => {
                 placeholder="Order ID / Devotee / Status"
               />
             </label>
-
-            <div className="pr-bulk-control">
-              <span>Bulk Status</span>
-              <select
-                value={bulkStatusDraft}
-                onChange={(event) => setBulkStatusDraft(event.target.value)}
-                disabled={isBulkUpdating || isLoading}
-              >
-                {STATUS_UPDATE_OPTIONS.map((status) => (
-                  <option key={status} value={status}>
-                    {status}
-                  </option>
-                ))}
-              </select>
-              <button
-                type="button"
-                className="pr-btn pr-btn-primary pr-btn-small"
-                onClick={handleBulkUpdateSelected}
-                disabled={isBulkUpdating || !selectedRequestIds.length}
-              >
-                {isBulkUpdating ? "Updating..." : "Update Selected"}
-              </button>
-              <span className="pr-selected-count">{selectedRequestIds.length} selected</span>
-            </div>
           </div>
           {actionMessage && (
             <p className={`pr-state-text ${actionMessageType === "error" ? "pr-error-text" : ""}`}>
@@ -986,15 +855,6 @@ const PoojaRequests = () => {
                 <table className="pr-table">
                   <thead>
                     <tr>
-                      <th>
-                        <input
-                          type="checkbox"
-                          checked={areAllVisibleRowsSelected}
-                          onChange={(event) => handleToggleAllVisibleRows(event.target.checked)}
-                          disabled={!visibleRequestIds.length || isBulkUpdating || isLoading}
-                          aria-label="Select all visible requests"
-                        />
-                      </th>
                       <th>Order ID</th>
                       <th>Devotee</th>
                       <th>Status</th>
@@ -1010,7 +870,7 @@ const PoojaRequests = () => {
                   <tbody>
                     {visibleRows.length === 0 ? (
                       <tr>
-                        <td colSpan={11} className="pr-empty-cell">
+                        <td colSpan={10} className="pr-empty-cell">
                           No pooja requests found for selected filters.
                         </td>
                       </tr>
@@ -1022,17 +882,6 @@ const PoojaRequests = () => {
 
                         return (
                           <tr key={row.rowId}>
-                            <td>
-                              <input
-                                type="checkbox"
-                                checked={isSelectable && selectedRequestIdSet.has(numericRequestId)}
-                                onChange={(event) =>
-                                  isSelectable && handleToggleRowSelection(numericRequestId, event.target.checked)
-                                }
-                                disabled={!isSelectable || isBulkUpdating || isRowUpdating}
-                                aria-label={`Select request ${row.orderId}`}
-                              />
-                            </td>
                             <td>{row.orderId}</td>
                             <td>{row.devotee}</td>
                             <td>
@@ -1063,7 +912,7 @@ const PoojaRequests = () => {
                                 <select
                                   value={rowStatusDrafts[row.rowId] || getEditableStatus(row.status)}
                                   onChange={(event) => handleRowStatusDraftChange(row.rowId, event.target.value)}
-                                  disabled={isRowUpdating || isBulkUpdating || !isSelectable}
+                                  disabled={isRowUpdating || !isSelectable}
                                 >
                                   {STATUS_UPDATE_OPTIONS.map((status) => (
                                     <option key={status} value={status}>
@@ -1075,7 +924,7 @@ const PoojaRequests = () => {
                                   type="button"
                                   className="pr-btn pr-btn-primary pr-btn-small"
                                   onClick={() => handleUpdateRowStatus(row)}
-                                  disabled={isRowUpdating || isBulkUpdating || !isSelectable}
+                                  disabled={isRowUpdating || !isSelectable}
                                 >
                                   {isRowUpdating ? "..." : "Update"}
                                 </button>

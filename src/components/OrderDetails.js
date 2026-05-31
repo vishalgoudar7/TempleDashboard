@@ -128,6 +128,10 @@ const OrderDetails = () => {
     navigate("/");
   };
 
+  const handleBackToRequests = () => {
+    navigate("/temple-officer/requests");
+  };
+
   return (
     <div className={`dashboard-shell ${sidebarOpen ? "sidebar-open" : "sidebar-closed"}`}>
       <aside className="sidebar-menu">
@@ -253,8 +257,8 @@ const OrderDetails = () => {
           <div className="order-details-actions">
             <button
               type="button"
-              className="pr-btn pr-btn-ghost"
-              onClick={() => navigate("/temple-officer/requests")}
+              className="order-details-back-btn"
+              onClick={handleBackToRequests}
             >
               Back to Requests
             </button>
@@ -272,6 +276,16 @@ const OrderDetails = () => {
               ))}
             </div>
           )}
+
+          <div className="order-details-footer">
+            <button
+              type="button"
+              className="order-details-back-btn"
+              onClick={handleBackToRequests}
+            >
+              Back
+            </button>
+          </div>
         </div>
       </div>
     </div>
